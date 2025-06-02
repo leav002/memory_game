@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>순서 기억 게임</title>
+  <style>
+    body {
+      background-color: #222;
+      color: white;
+      text-align: center;
+      font-family: sans-serif;
+    }
+
+    #game-board {
+      display: grid;
+      margin: 30px auto;
+      background-color: #444;
+      border: 2px solid #fff;
+    }
+
+    .cell {
+      border: 1px solid #666;
+      width: 60px;
+      height: 60px;
+      position: relative;
+    }
+
+    .box {
+      width: 100%;
+      height: 100%;
+      background-color: #00bcd4;
+      opacity: 0;
+      transition: opacity 0.3s, background-color 0.3s;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .box.visible {
+      opacity: 1;
+    }
+
+    /* 맞은 칸 초록색 표시 */
+    .box.correct {
+      background-color: #4CAF50 !important;
+      opacity: 1 !important;
+      cursor: default;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>순서 기억 게임</h1>
+  <div id="game-board"></div>
+  <div id="message" style="min-height: 28px; margin-top: 20px; font-size: 20px;"></div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const difficulty = urlParams.get('difficulty') || 'easy';
+
+    const settings = {
+      easy: 5,
+      normal: 6,
+      hard: 7
+    };
+    const gridSize = settings[difficulty];
+    const totalCells = gridSize * gridSize;
+
+    const boxCountSettings = {
+      easy: 5,
+      normal: 8,
+      hard: 12
+    };
+    const totalBoxes = boxCountSettings[difficulty];
+
+    const board = document.getElementById('game-board');
+    const message = document.getElementById('message');
+
+    board.style.gridTemplateColumns = `repeat(${gridSize}, 60px)`;
+    board.style.gridTemplateRows = `repeat(${gridSize}, 60px)`;
+
+    const cells = [];
+    let boxSequence = [];
+    let userIndex = 0;
+
+    function createCells() {
+      board.innerHTML = '';
+      cells.length = 0;
+      for (let i = 0; i < totalCells; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        board.appendChild(cell);
+        cells.push(cell);
+      }
+    }
+
+    function placeBoxes() {
+      boxSequence = [];
+      const usedIndices = new Set();
+
+      while (boxSequence.length < totalBoxes) {
+        const idx = Math.floor(Math.random() * totalCells);
+        if (usedIndices.has(idx)) continue;
+
+        const box = document.createElement('div');
+        box.className = 'box';
+        box.dataset.seq = boxSequence.length;
+        box.addEventListener('click', handleBoxClick);
+
+        cells[idx].appendChild(box);
+        boxSequence.push(box);
+        usedIndices.add(idx);
+      }
+    }
+
+    function showSequence(index = 0) {
+      if (index >= boxSequence.length) {
+        message.textContent = '순서를 기억해서 클릭하세요!';
+        return;
+      }
+      const box = boxSequence[index];
+      box.classList.add('visible');
+
+      setTimeout(() => {
+        box.classList.remove('visible');
+        setTimeout(() => showSequence(index + 1), 500);
+      }, 800);
+    }
+
+    function handleBoxClick(event) {
+      const box = event.currentTarget;
+
+      // 이미 맞은 칸이면 클릭 무시
+      if (box.classList.contains('correct')) {
+        return;
+      }
+
+      const clickedSeq = parseInt(box.dataset.seq, 10);
+
+      if (clickedSeq !== userIndex) {
+        message.textContent = '❌ 틀렸어요! 다시 시작합니다.';
+        userIndex = 0;
+        startGame();
+        return;
+      }
+
+      // 맞으면 클래스 추가해서 색깔 바꿈
+      box.classList.add('correct');
+      message.textContent = `✅ ${userIndex + 1}번째 칸을 맞췄어요!`;
+      userIndex++;
+
+      if (userIndex === boxSequence.length) {
+        message.textContent = '🎉 모든 칸을 맞췄어요! 대단해요!';
+      }
+    }
+
+    function startGame() {
+      message.textContent = '';
+      createCells();
+      placeBoxes();
+      userIndex = 0;
+      setTimeout(() => showSequence(), 1000);
+    }
+
+    startGame();
+  </script>
+
+</body>
+</html>
