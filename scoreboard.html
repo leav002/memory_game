@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>점수판</title>
+  <style>
+    body {
+      background-color: #222;
+      color: white;
+      font-family: sans-serif;
+      text-align: center;
+      padding-top: 80px;
+    }
+
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 40px;
+    }
+
+    .score-table {
+      margin: 0 auto;
+      border-collapse: collapse;
+      width: 60%;
+    }
+
+    .score-table th, .score-table td {
+      border: 1px solid #555;
+      padding: 12px;
+      font-size: 1.2em;
+    }
+
+    .score-table th {
+      background-color: #00bcd4;
+      color: black;
+    }
+
+    .score-table td {
+      background-color: #333;
+    }
+
+    button {
+      margin-top: 40px;
+      padding: 10px 20px;
+      font-size: 1em;
+      border: none;
+      border-radius: 8px;
+      background-color: #00bcd4;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0097a7;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>점수판</h1>
+
+  <table class="score-table">
+    <thead>
+      <tr>
+        <th>난이도</th>
+        <th>최고 점수</th>
+      </tr>
+    </thead>
+    <tbody id="scoreBody">
+    </tbody>
+  </table>
+
+  <button onclick="goBack()">메인 메뉴로</button>
+
+  <script>
+    function goBack() {
+      window.location.href = 'index.html';
+    }
+
+    function loadScores() {
+      const levels = ['easy', 'normal', 'hard'];
+      const scoreBody = document.getElementById('scoreBody');
+
+      levels.forEach(level => {
+        const savedData = localStorage.getItem(`sequence_${level}_score`);
+        let score = '-';
+        if (savedData) {
+          const parsed = JSON.parse(savedData);
+          score = parsed.score;
+        }
+
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>${level}</td><td>${score}</td>`;
+        scoreBody.appendChild(row);
+      });
+    }
+
+    loadScores();
+  </script>
+
+</body>
+</html>
