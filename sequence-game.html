@@ -39,7 +39,6 @@
       opacity: 1;
     }
 
-    /* 맞은 칸 초록색 표시 */
     .box.correct {
       background-color: #4CAF50 !important;
       opacity: 1 !important;
@@ -129,7 +128,6 @@
     function handleBoxClick(event) {
       const box = event.currentTarget;
 
-      // 이미 맞은 칸이면 클릭 무시
       if (box.classList.contains('correct')) {
         return;
       }
@@ -137,19 +135,18 @@
       const clickedSeq = parseInt(box.dataset.seq, 10);
 
       if (clickedSeq !== userIndex) {
-        message.textContent = '❌ 틀렸어요! 다시 시작합니다.';
+        message.textContent = '틀렸어요! 다시 시작합니다.';
         userIndex = 0;
         startGame();
         return;
       }
 
-      // 맞으면 클래스 추가해서 색깔 바꿈
       box.classList.add('correct');
-      message.textContent = `✅ ${userIndex + 1}번째 칸을 맞췄어요!`;
+      message.textContent = `${userIndex + 1}번째 칸을 맞췄어요!`;
       userIndex++;
 
       if (userIndex === boxSequence.length) {
-        message.textContent = '🎉 모든 칸을 맞췄어요! 대단해요!';
+        message.textContent = '모든 칸을 맞췄어요! 대단해요!';
       }
     }
 
