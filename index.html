@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+<<<<<<< HEAD
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>메모리 게임</title>
@@ -506,3 +507,82 @@ h1 {
     </script>
 </body>
 </html>
+=======
+  <meta charset="UTF-8">
+  <title>메모리 게임</title>
+  <style>
+    body {
+      background-color: #222;
+      color: white;
+      font-family: sans-serif;
+      text-align: center;
+      padding-top: 100px;
+    }
+
+    h1 {
+      font-size: 3em;
+      margin-bottom: 40px;
+    }
+
+    select, button {
+      font-size: 1.2em;
+      padding: 10px 20px;
+      margin: 10px;
+      border: none;
+      border-radius: 8px;
+    } 
+
+    button {
+      background-color: #00bcd4;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0097a7;
+    }
+
+    .selector {
+      margin-bottom: 40px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>메모리 게임</h1>
+
+  <div class="selector">
+    <label for="mode">모드 선택:</label>
+    <select id="mode">
+      <option value="flip">카드 뒤집기</option>
+      <option value="sequence">순서 기억</option>
+    </select>
+  </div>
+
+  <div class="selector">
+    <label for="difficulty">난이도:</label>
+    <select id="difficulty">
+      <option value="easy">쉬움</option>
+      <option value="normal">보통</option>
+      <option value="hard">어려움</option>
+    </select>
+  </div>
+
+  <button onclick="startGame()">게임 시작</button>
+
+  <script>
+    function startGame() {
+      const mode = document.getElementById("mode").value;
+      const difficulty = document.getElementById("difficulty").value;
+
+      if (mode === "flip") {
+        window.location.href = `flip-game.html?difficulty=${difficulty}`;
+      } else if (mode === "sequence") {
+        window.location.href = `sequence-game.html?difficulty=${difficulty}`;
+      }
+    }
+  </script>
+
+</body>
+</html>
+>>>>>>> f045e6571c0123caea01785eea46c90c54973751
