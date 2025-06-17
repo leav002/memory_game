@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>메모리 게임</title>
+    <style>
+@font-face {
+    font-family: 'PFStardust';
+    src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/PFStardust.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+body.game-background {
+    background-image: url('img/background.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: #D9D9D9;
+    color: #fff;
+    font-family: 'PFStardust', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+    position: relative;
+}
+
+h1 {
+    font-size: 2.2em;
+    text-shadow: 2px 2px 4px #000;
+    margin-bottom: 20px;
+    z-index: 2;
+}
+
+.menu, .difficulty-menu {
+    z-index: 2;
+    text-align: center;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.button-group {
+    display: flex;
+    flex-direction: column;
+    margin: 0 60px;
+}
+
+.menu button, .difficulty-menu button {
+    background-color: transparent;
+    color: #fff;
+    border: 2px solid #fff;
+    padding: 12px 25px;
+    margin: 10px;
+    font-size: 1.1em;
+    cursor: pointer;
+    border-radius: 5px;
+    font-family: 'PFStardust', monospace;
+    text-shadow: 1px 1px 2px #000;
+}
+
+.menu button:hover, .difficulty-menu button:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+#gameArea button {
+    background-color: transparent;
+    color: #fff;
+    border: 2px solid #fff;
+    padding: 12px 25px;
+    margin: 10px;
+    font-size: 1.1em;
+    cursor: pointer;
+    border-radius: 5px;
+    z-index: 2;
+    font-family: 'PFStardust', monospace;
+    text-shadow: 1px 1px 2px #000;
+}
+
+#gameArea button:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+.record {
+    font-size: 0.9em;
+    margin-top: 5px;
+    z-index: 2;
+    text-shadow: 1px 1px 2px #000;
+}
+
+.gif-image {
+    width: 300px;
+    height: auto;
+    margin-bottom: 15px;
+    z-index: 2;
+    border-radius: 5px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+}
+
+#cardGrid {
+    display: grid;
+    gap: 10px;
+    margin: 20px 0;
+    justify-content: center;
+    align-content: center;
+    width: max-content;
+    z-index: 2;
+}
+
+.card {
+    width: 100px;
+    height: 100px;
+    background-color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2em;
+    cursor: pointer;
+    border-radius: 5px;
+    position: relative;
+}
+
+.box {
+    width: 100%;
+    height: 100%;
+    background-color: #00bcd4;
+    opacity: 0;
+    transition: opacity 0.3s, background-color 0.3s;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.box.visible {
+    opacity: 1;
+}
+
+.box.correct {
+    background-color: #4CAF50 !important;
+    opacity: 1 !important;
+    cursor: default;
+}
+
+#timer {
+    font-size: 1.1em;
+    margin: 10px 0;
+    z-index: 2;
+    text-shadow: 1px 1px 2px #000;
+}
+
+#message {
+    z-index: 2;
+    text-shadow: 1px 1px 2px #000;
+}
+    </style>
+</head>
+<body class="game-background">
+    <h1>메모리 게임</h1>
+    <div class="menu" id="mainMenu">
+        <div class="button-group">
+            <img src="img/card_match.gif" alt="Card Match GIF" class="gif-image">
+            <button onclick="showDifficultyMenu('matching')">카드 뒤집기</button>
+            <div class="record" id="record-matching">최고기록: 없음</div>
+        </div>
+        <div class="button-group">
+            <img src="img/process_mem.gif" alt="Process Memory GIF" class="gif-image">
+            <button onclick="showDifficultyMenu('process')">순서 기억</button>
+            <div class="record" id="record-process">최고기록: 없음</div>
+        </div>
+    </div>
+    <div class="difficulty-menu" id="difficultyMenu" style="display: none;">
+        <button onclick="startGameWithDifficulty(4)">4x4</button>
+        <button onclick="startGameWithDifficulty(6)">6x6</button>
+        <button onclick="startGameWithDifficulty(8)">8x8</button>
+        <button onclick="backToMainMenu()">뒤로</button>
+    </div>
+    <div id="gameArea" style="display: none;">
+        <div id="message" style="min-height: 28px; margin: 20px 0; font-size: 1.2em;"></div>
+        <div id="timer"></div>
+        <div id="cardGrid"></div>
+        <button onclick="resetGame()">다시 시작</button>
+    </div>
+    <script>
+        const cardGrid = document.getElementById('cardGrid');
+        const gameArea = document.getElementById('gameArea');
+        const mainMenu = document.getElementById('mainMenu');
+        const difficultyMenu = document.getElementById('difficultyMenu');
+        const message = document.getElementById('message');
+        const timerDisplay = document.getElementById('timer');
+        let cards = [];
+        let flippedCards = [];
+        let matchedCards = [];
+        let boxSequence = [];
+        let userIndex = 0;
+        let currentMode = '';
+        let currentSize = 4;
+        let isShowingSequence = false;
+        let timer;
+        let timeLeft = 300;
+        const emojis = ['😺', '🐶', '🐰', '🦁', '🐘', '🦒', '🐼', '🦊', '🐻', '🐯'];
+
+        function updateRecords() {
+            const matchingScore = localStorage.getItem('sequence_matching_score');
+            const processScore = localStorage.getItem('sequence_process_score');
+            const matchingRecordElement = document.getElementById('record-matching');
+            const processRecordElement = document.getElementById('record-process');
+
+            matchingRecordElement.textContent = '최고기록: 없음';
+            processRecordElement.textContent = '최고기록: 없음';
+
+            try {
+                if (matchingScore) {
+                    const matchingData = JSON.parse(matchingScore);
+                    if (matchingData && typeof matchingData.score === 'number' && matchingData.size) {
+                        matchingRecordElement.textContent = `최고기록: ${matchingData.score}점 (${matchingData.size}x${matchingData.size})`;
+                    }
+                }
+            } catch (e) {
+                console.error('Error parsing matching score:', e);
+            }
+
+            try {
+                if (processScore) {
+                    const processData = JSON.parse(processScore);
+                    if (processData && typeof processData.score === 'number' && processData.size) {
+                        processRecordElement.textContent = `최고기록: ${processData.score}점 (${processData.size}x${processData.size})`;
+                    }
+                }
+            } catch (e) {
+                console.error('Error parsing process score:', e);
+            }
+        }
+
+        function getHighestClearedSize(mode) {
+            const progressKey = `sequence_${mode}_progress`;
+            const progress = localStorage.getItem(progressKey);
+            try {
+                const parsed = JSON.parse(progress);
+                return parsed && parsed.highestClearedSize ? parsed.highestClearedSize : 4;
+            } catch (e) {
+                console.error(`Error parsing ${mode} progress:`, e);
+                return 4;
+            }
+        }
+
+        function saveProgress(mode, size) {
+            const progressKey = `sequence_${mode}_progress`;
+            const currentHighest = getHighestClearedSize(mode);
+            if (size >= currentHighest) {
+                localStorage.setItem(progressKey, JSON.stringify({ highestClearedSize: size }));
+            }
+        }
+
+        function getNextDifficulty(currentSize) {
+            const sizes = [4, 6, 8];
+            const currentIndex = sizes.indexOf(currentSize);
+            return currentIndex < sizes.length - 1 ? sizes[currentIndex + 1] : 8;
+        }
+
+        function showDifficultyMenu(mode) {
+            currentMode = mode;
+            mainMenu.style.display = 'none';
+            difficultyMenu.style.display = 'flex';
+        }
+
+        function backToMainMenu() {
+            difficultyMenu.style.display = 'none';
+            mainMenu.style.display = 'flex';
+        }
+
+        function startGameWithDifficulty(size) {
+            const highestCleared = getHighestClearedSize(currentMode);
+            currentSize = size;
+            if (highestCleared > size) {
+                currentSize = getNextDifficulty(size);
+            }
+            difficultyMenu.style.display = 'none';
+            gameArea.style.display = 'block';
+            if (currentMode === 'matching') {
+                createCards(currentSize);
+                startTimer();
+            } else {
+                createSequenceGame(currentSize);
+            }
+            updateRecords();
+        }
+
+        function startTimer() {
+            timeLeft = 300;
+            updateTimerDisplay();
+            clearInterval(timer);
+            timer = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    message.textContent = '시간 초과! 게임 오버!';
+                    setTimeout(() => resetGame(), 2000);
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerDisplay.textContent = `남은 시간: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        }
+
+        function createCards(size) {
+            const totalCards = size * size;
+            const pairsNeeded = totalCards / 2;
+            let availableEmojis = emojis;
+            while (availableEmojis.length < pairsNeeded) {
+                availableEmojis = availableEmojis.concat(emojis);
+            }
+            availableEmojis = availableEmojis.slice(0, pairsNeeded);
+            const cardValues = availableEmojis.concat(availableEmojis).sort(() => Math.random() - 0.5);
+            cards = Array(totalCards).fill().map((_, index) => ({
+                value: cardValues[index],
+                isFlipped: false,
+                isMatched: false
+            }));
+            cardGrid.style.gridTemplateColumns = `repeat(${size}, 100px)`;
+            cardGrid.style.gridTemplateRows = `repeat(${size}, 100px)`;
+            cardGrid.innerHTML = '';
+            cards.forEach((card, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card';
+                cardElement.dataset.index = index;
+                cardElement.addEventListener('click', flipCard);
+                cardGrid.appendChild(cardElement);
+            });
+            message.textContent = `${size}x${size} 게임`;
+            matchedCards = [];
+            flippedCards = [];
+        }
+
+        function flipCard(event) {
+            if (timeLeft <= 0) return;
+            const index = parseInt(event.target.dataset.index);
+            if (flippedCards.length < 2 && !cards[index].isFlipped && !cards[index].isMatched) {
+                cards[index].isFlipped = true;
+                event.target.textContent = cards[index].value;
+                flippedCards.push(index);
+                if (flippedCards.length === 2) {
+                    setTimeout(checkMatch, 1000);
+                }
+            }
+        }
+
+        function checkMatch() {
+            const [index1, index2] = flippedCards;
+            const cardElements = document.querySelectorAll('.card');
+            if (cards[index1].value === cards[index2].value) {
+                cards[index1].isMatched = true;
+                cards[index2].isMatched = true;
+                cardElements[index1].style.backgroundColor = '#4CAF50';
+                cardElements[index2].style.backgroundColor = '#4CAF50';
+                cardElements[index1].style.cursor = 'default';
+                cardElements[index2].style.cursor = 'default';
+                matchedCards.push(index1, index2);
+                if (matchedCards.length === cards.length) {
+                    clearInterval(timer);
+                    message.textContent = '게임 완료!';
+                    saveScore('matching', cards.length / 2, currentSize);
+                    saveProgress('matching', currentSize);
+                    const nextSize = getNextDifficulty(currentSize);
+                    setTimeout(() => startGameWithDifficulty(nextSize), 1000);
+                }
+            } else {
+                cards[index1].isFlipped = false;
+                cards[index2].isFlipped = false;
+                cardElements[index1].textContent = '';
+                cardElements[index2].textContent = '';
+            }
+            flippedCards = [];
+        }
+
+        function createSequenceGame(size) {
+            const totalBoxes = size;
+            cardGrid.style.gridTemplateColumns = `repeat(${size}, 100px)`;
+            cardGrid.style.gridTemplateRows = `repeat(${size}, 100px)`;
+            cardGrid.innerHTML = '';
+            cards = Array(size * size).fill().map(() => ({}));
+            for (let i = 0; i < size * size; i++) {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card';
+                cardElement.dataset.index = i;
+                cardGrid.appendChild(cardElement);
+                cards[i].element = cardElement;
+            }
+            createSequence(totalBoxes);
+            userIndex = 0;
+            message.textContent = `${size}x${size} 게임`;
+            isShowingSequence = true;
+            setTimeout(() => showSequence(), 1000);
+        }
+
+        function createSequence(totalBoxes) {
+            boxSequence = [];
+            const usedIndices = new Set();
+            while (boxSequence.length < totalBoxes) {
+                const idx = Math.floor(Math.random() * cards.length);
+                if (usedIndices.has(idx)) continue;
+                const box = document.createElement('div');
+                box.className = 'box';
+                box.dataset.seq = boxSequence.length;
+                cards[idx].element.appendChild(box);
+                boxSequence.push(box);
+                usedIndices.add(idx);
+            }
+        }
+
+        function showSequence(index = 0) {
+            if (index >= boxSequence.length) {
+                isShowingSequence = false;
+                attachBoxListeners();
+                message.textContent = '순서를 기억해서 클릭하세요!';
+                return;
+            }
+            const box = boxSequence[index];
+            box.classList.add('visible');
+            setTimeout(() => {
+                box.classList.remove('visible');
+                setTimeout(() => showSequence(index + 1), 500);
+            }, 800);
+        }
+
+        function attachBoxListeners() {
+            boxSequence.forEach(box => {
+                box.addEventListener('click', handleBoxClick);
+            });
+        }
+
+        function handleBoxClick(event) {
+            if (isShowingSequence) return;
+            const box = event.currentTarget;
+            if (box.classList.contains('correct')) return;
+            const clickedSeq = parseInt(box.dataset.seq, 10);
+
+            if (clickedSeq !== userIndex) {
+                message.textContent = '틀렸습니다! 다시 시도하세요!';
+                userIndex = 0;
+                createSequenceGame(currentSize);
+                return;
+            }
+
+            box.classList.add('correct');
+            userIndex++;
+            message.textContent = `박스 ${userIndex}번을 클릭했습니다!`;
+            if (userIndex === boxSequence.length) {
+                message.textContent = '모든 박스를 맞췄습니다! 훌륭합니다!';
+                saveScore('process', userIndex, currentSize);
+                saveProgress('process', currentSize);
+                const nextSize = getNextDifficulty(currentSize);
+                setTimeout(() => startGameWithDifficulty(nextSize), 1000);
+            }
+        }
+
+        function saveScore(mode, score, size) {
+            const scoreKey = `sequence_${mode}_score`;
+            const existingScore = localStorage.getItem(scoreKey);
+            let shouldUpdate = true;
+            try {
+                const existing = existingScore ? JSON.parse(existingScore) : null;
+                if (existing && existing.score > score) {
+                    shouldUpdate = false;
+                }
+            } catch (e) {
+                console.error(`Error parsing ${mode} score:`, e);
+            }
+            if (shouldUpdate) {
+                const scoreObj = {
+                    score: score,
+                    size: size,
+                    date: new Date().toISOString()
+                };
+                localStorage.setItem(scoreKey, JSON.stringify(scoreObj));
+            }
+        }
+
+        function resetGame() {
+            clearInterval(timer);
+            mainMenu.style.display = 'flex';
+            gameArea.style.display = 'none';
+            difficultyMenu.style.display = 'none';
+            matchedCards = [];
+            flippedCards = [];
+            boxSequence = [];
+            userIndex = 0;
+            isShowingSequence = false;
+            cardGrid.innerHTML = '';
+            currentSize = 4;
+            localStorage.removeItem('sequence_matching_progress');
+            localStorage.removeItem('sequence_process_progress');
+            timerDisplay.textContent = '';
+            updateRecords();
+        }
+
+        updateRecords();
+    </script>
+</body>
+</html>
